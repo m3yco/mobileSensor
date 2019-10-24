@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">mobileSensor</string>
+    <string name="location">GPS</string>
+    <string name="accelerometer">Accelerometer</string>
+    <string name="temperature">Temperature</string>
+    <string name="celsius"></string>
+
+
+</resources>
