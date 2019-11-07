@@ -53,6 +53,11 @@
             android:choiceMode="singleChoice"
             android:id="@+id/label_temp"
             />
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/panel">
+        </ImageView>
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
