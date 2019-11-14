@@ -21,11 +21,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity
-            android:name="de.hsalbsig.msc.mobilesensor.SignInActivity"
-            android:label="@string/name_sign_in_activity"
-            android:theme="@style/ThemeOverlay.MyNoTitleActivity">
-        </activity>
         <activity android:name=".mobileSensor">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

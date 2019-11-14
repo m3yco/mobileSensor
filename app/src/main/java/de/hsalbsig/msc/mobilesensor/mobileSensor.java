@@ -1,5 +1,7 @@
 package de.hsalbsig.msc.mobilesensor;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -26,7 +28,14 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.util.Log;
 
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.SignInButton;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 
 import static android.content.ContentValues.TAG;
 
@@ -60,8 +69,11 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
 
     //Aufgabe 2
 
-    private SignInButton signButton;
-    private Button btnLogout;
+    private static final String TAG = "SignIn";
+    private static final int RC_SIGN_IN = 9001;
+
+    private GoogleSignInClient mGoogleSignInClient;
+    private TextView mStatusTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,10 +97,21 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
         iView = findViewById(R.id.panel);
 
         //Aufgabe 2
-        signButton = (SignInButton) findViewById(R.id.sign_in_button);
-        signButton.setOnClickListener(this);
-        btnLogout = (Button) findViewById(R.id.btn_logout);
-        btnLogout.setEnabled(false);
+        // Views
+        mStatusTextView = findViewById(R.id.status);
+
+        // Button listeners
+        findViewById(R.id.sign_in_button).setOnClickListener(this);
+        findViewById(R.id.btn_logout).setOnClickListener(this);
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
+
+        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+
+        SignInButton signInButton = findViewById(R.id.sign_in_button);
+        signInButton.setSize(SignInButton.SIZE_STANDARD);
+        signInButton.setColorScheme(SignInButton.COLOR_LIGHT);
 
         // SensorManager
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -176,9 +199,84 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        updateUI(account);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == RC_SIGN_IN) {
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            handleSignInResult(task);
+        }
+    }
+
+    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
+        try {
+            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+            updateUI(account);
+        } catch (ApiException e) {
+            Log.w(TAG, "signInResult:failed code=" + e.getStatusCode());
+            updateUI(null);
+        }
+    }
+
+    private void signIn() {
+        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+        startActivityForResult(signInIntent, RC_SIGN_IN);
+    }
+
+    private void signOut() {
+        mGoogleSignInClient.signOut()
+                .addOnCompleteListener(this, new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        updateUI(null);
+                    }
+                });
+    }
+
+    private void revokeAccess() {
+        mGoogleSignInClient.revokeAccess()
+                .addOnCompleteListener(this, new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        updateUI(null);
+                    }
+                });
+    }
+
+    private void updateUI(@Nullable GoogleSignInAccount account) {
+        if (account != null) {
+            mStatusTextView.setText(getString(R.string.signed_in_fmt, "\n"+ account.getDisplayName()) + "\n"+ account.getEmail()
+                    + "\n"+ account.getId() + "\n"+ account.getPhotoUrl());
+
+            findViewById(R.id.sign_in_button).setVisibility(View.GONE);
+            findViewById(R.id.btn_logout).setVisibility(View.VISIBLE);
+        } else {
+            mStatusTextView.setText(R.string.signed_out);
+
+            findViewById(R.id.sign_in_button).setVisibility(View.VISIBLE);
+            findViewById(R.id.btn_logout).setVisibility(View.GONE);
+        }
+    }
+
+    @Override
     public void onClick(View v) {
-        Intent intent;
-        intent = new Intent(mobileSensor.this, SignInActivity.class);
-        startActivity(intent);
+        switch (v.getId()) {
+            case R.id.sign_in_button:
+                Log.i("LoggingIn", "Login completed!");
+                signIn();
+                break;
+            case R.id.btn_logout:
+                Log.i("LoggingOut", "Logout completed!");
+                signOut();
+                break;
+        }
     }
 }
