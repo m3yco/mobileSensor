@@ -7,6 +7,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -25,9 +26,11 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.util.Log;
 
+import com.google.android.gms.common.SignInButton;
+
 import static android.content.ContentValues.TAG;
 
-public class mobileSensor extends Activity implements SensorEventListener {
+public class mobileSensor extends Activity implements SensorEventListener, View.OnClickListener {
 
     // GUI Variablen
     private TextView labelLocation;
@@ -55,6 +58,11 @@ public class mobileSensor extends Activity implements SensorEventListener {
 
     private final String[] perms = {"android.permission.INTERNET", "android.permission.ACCESS_FINE_LOCATION"};
 
+    //Aufgabe 2
+
+    private SignInButton signButton;
+    private Button btnLogout;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,6 +83,12 @@ public class mobileSensor extends Activity implements SensorEventListener {
         btnTemperature.setEnabled(true);
 
         iView = findViewById(R.id.panel);
+
+        //Aufgabe 2
+        signButton = (SignInButton) findViewById(R.id.sign_in_button);
+        signButton.setOnClickListener(this);
+        btnLogout = (Button) findViewById(R.id.btn_logout);
+        btnLogout.setEnabled(false);
 
         // SensorManager
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -153,11 +167,18 @@ public class mobileSensor extends Activity implements SensorEventListener {
     private boolean checkPermissions() {
         boolean result = true;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    int granted = ContextCompat.checkSelfPermission(mobileSensor.this, Manifest.permission.ACCESS_FINE_LOCATION);
-                    if (granted != PackageManager.PERMISSION_GRANTED) {
-                        result = false;
+            int granted = ContextCompat.checkSelfPermission(mobileSensor.this, Manifest.permission.ACCESS_FINE_LOCATION);
+            if (granted != PackageManager.PERMISSION_GRANTED) {
+                result = false;
             }
         }
         return result;
+    }
+
+    @Override
+    public void onClick(View v) {
+        Intent intent;
+        intent = new Intent(mobileSensor.this, SignInActivity.class);
+        startActivity(intent);
     }
 }

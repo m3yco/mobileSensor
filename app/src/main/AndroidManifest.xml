@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="de.hsalbsig.msc.mobilesensor">
-
     <!-- GPS -->
-    <uses-permission android:name="android.permission.INTERNET"/>
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-
-    <!--ACCELEROMETER -->
-    <uses-feature android:name="android.hardware.sensor.accelerometer" android:required="false" />
-    <!--AUßENTEMPERATUR -->
-    <uses-feature android:name="android.hardware.sensor.ambient_temperature" android:required="false" />
-    <!--LICHT -->
-    <uses-feature android:name="android.hardware.sensor.light" android:required="false" />
-
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /> <!-- ACCELEROMETER -->
+    <uses-feature
+        android:name="android.hardware.sensor.accelerometer"
+        android:required="false" /> <!-- AUßENTEMPERATUR -->
+    <uses-feature
+        android:name="android.hardware.sensor.ambient_temperature"
+        android:required="false" /> <!-- LICHT -->
+    <uses-feature
+        android:name="android.hardware.sensor.light"
+        android:required="false" />
 
     <application
         android:allowBackup="true"
@@ -21,6 +21,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+        <activity
+            android:name="de.hsalbsig.msc.mobilesensor.SignInActivity"
+            android:label="@string/name_sign_in_activity"
+            android:theme="@style/ThemeOverlay.MyNoTitleActivity">
+        </activity>
         <activity android:name=".mobileSensor">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
