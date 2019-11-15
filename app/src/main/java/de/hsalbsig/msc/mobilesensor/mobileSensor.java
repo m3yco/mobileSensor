@@ -7,26 +7,29 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.Settings;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
+import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.util.Log;
+import android.widget.Toolbar;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -34,8 +37,12 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+
+import java.io.IOException;
+import java.net.URL;
 
 import static android.content.ContentValues.TAG;
 
@@ -54,7 +61,6 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
     // Sensor Variablen
     private SensorManager sensorManager;
     private LocationManager locationManager;
-    private LocationListener locationListener;
     private Sensor mAccel;
     private Sensor mTemp;
     private Sensor mLocation;
@@ -68,17 +74,25 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
     private final String[] perms = {"android.permission.INTERNET", "android.permission.ACCESS_FINE_LOCATION"};
 
     //Aufgabe 2
-
-    private static final String TAG = "SignIn";
+    private static final String TAG = mobileSensor.class.getSimpleName();
     private static final int RC_SIGN_IN = 9001;
 
+    private SignInButton btnSignIn;
+    private Button btnSignOut;
+    private LinearLayout llProfileLayout;
+    private ImageView imgProfilePic;
+    private TextView txtName, txtEmail, txtId;
+
     private GoogleSignInClient mGoogleSignInClient;
-    private TextView mStatusTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        // toolbar
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setActionBar(toolbar);
 
         // Variablen den Komponenten zuweisen
         labelLocation = findViewById(R.id.label_gps);
@@ -98,7 +112,13 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
 
         //Aufgabe 2
         // Views
-        mStatusTextView = findViewById(R.id.status);
+        btnSignIn = (SignInButton) findViewById(R.id.sign_in_button);
+        btnSignOut = (Button) findViewById(R.id.btn_logout);
+        llProfileLayout = (LinearLayout) findViewById(R.id.llProfile);
+        imgProfilePic = (ImageView) findViewById(R.id.imgProfilePic);
+        txtName = (TextView) findViewById(R.id.txtName);
+        txtEmail = (TextView) findViewById(R.id.txtEmail);
+        txtId = (TextView) findViewById(R.id.txtID);
 
         // Button listeners
         findViewById(R.id.sign_in_button).setOnClickListener(this);
@@ -109,9 +129,8 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
 
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
 
-        SignInButton signInButton = findViewById(R.id.sign_in_button);
-        signInButton.setSize(SignInButton.SIZE_STANDARD);
-        signInButton.setColorScheme(SignInButton.COLOR_LIGHT);
+        btnSignIn.setSize(SignInButton.SIZE_STANDARD);
+        btnSignIn.setColorScheme(SignInButton.COLOR_LIGHT);
 
         // SensorManager
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -124,7 +143,7 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
         sensorManager.registerListener(this, mAccel, SensorManager.SENSOR_DELAY_NORMAL);
         sensorManager.registerListener(this, mTemp, SensorManager.SENSOR_DELAY_NORMAL);
 
-        if (checkPermissions() == false) {
+        if (!checkPermissions()) {
             try {
                 ActivityCompat.requestPermissions((Activity) mobileSensor.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 3);
             } catch (Exception e) {
@@ -135,6 +154,7 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
         }
     }
 
+
     public void locationManager(View view) {
         tracker=new LocationTracker(mobileSensor.this);
         if(tracker.isLocationEnabled)
@@ -142,7 +162,7 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
             Log.i(logMain, "GPS Daten werden gelesen");
             double latitude=tracker.getLatitude();
             double longitude=tracker.getLongitude();
-            labelLocation.setText("Latitude= " + latitude + "\n Longitude= " + longitude);
+            labelLocation.setText("Latitude      " + latitude + "\n" + "Longitude " + longitude);
         }
         else
         {
@@ -203,7 +223,11 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
         super.onStart();
 
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
-        updateUI(account);
+        try {
+            updateUI(account);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -212,11 +236,15 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
 
         if (requestCode == RC_SIGN_IN) {
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
-            handleSignInResult(task);
+            try {
+                handleSignInResult(task);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
+    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) throws IOException {
         try {
             GoogleSignInAccount account = completedTask.getResult(ApiException.class);
             updateUI(account);
@@ -236,7 +264,11 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
                 .addOnCompleteListener(this, new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
-                        updateUI(null);
+                        try {
+                            updateUI(null);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 });
     }
@@ -246,23 +278,37 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
                 .addOnCompleteListener(this, new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
-                        updateUI(null);
+                        try {
+                            updateUI(null);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
                 });
     }
 
-    private void updateUI(@Nullable GoogleSignInAccount account) {
+    private void updateUI(@Nullable GoogleSignInAccount account) throws IOException {
         if (account != null) {
-            mStatusTextView.setText(getString(R.string.signed_in_fmt, "\n"+ account.getDisplayName()) + "\n"+ account.getEmail()
-                    + "\n"+ account.getId() + "\n"+ account.getPhotoUrl());
-
             findViewById(R.id.sign_in_button).setVisibility(View.GONE);
+            txtName.setText(account.getDisplayName());
+            txtEmail.setText(account.getEmail());
+            txtId.setText(account.getId());
+
+            // Aufgabe 2 Profilbild
+            Uri imgUri = account.getPhotoUrl();
+            if (imgUri != null)
+            {
+                URL imgUrl = new URL(imgUri.toString());
+                Bitmap imgPic = BitmapFactory.decodeStream(imgUrl.openConnection().getInputStream());
+                imgProfilePic.setImageBitmap(imgPic);
+            }
+
+            llProfileLayout.setVisibility(View.VISIBLE);
             findViewById(R.id.btn_logout).setVisibility(View.VISIBLE);
         } else {
-            mStatusTextView.setText(R.string.signed_out);
-
             findViewById(R.id.sign_in_button).setVisibility(View.VISIBLE);
             findViewById(R.id.btn_logout).setVisibility(View.GONE);
+            llProfileLayout.setVisibility(View.GONE);
         }
     }
 

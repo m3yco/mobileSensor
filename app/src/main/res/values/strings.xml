@@ -4,6 +4,7 @@
     <string name="accelerometer">Accelerometer</string>
     <string name="temperature">Temperature</string>
     <string name="celsius"></string>
+    <string name="btn_logout_from_google">Logout</string>
     <string name="logout">Logout</string>
     <string name="title_activity_login">Sign in</string>
     <string name="prompt_email">Email</string>
