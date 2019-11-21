@@ -16,14 +16,12 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -37,14 +35,11 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 
 import java.io.IOException;
-import java.net.URL;
-
-import static android.content.ContentValues.TAG;
+import java.io.InputStream;
 
 public class mobileSensor extends Activity implements SensorEventListener, View.OnClickListener {
 
@@ -156,16 +151,13 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
 
 
     public void locationManager(View view) {
-        tracker=new LocationTracker(mobileSensor.this);
-        if(tracker.isLocationEnabled)
-        {
+        tracker = new LocationTracker(mobileSensor.this);
+        if (tracker.isLocationEnabled) {
             Log.i(logMain, "GPS Daten werden gelesen");
-            double latitude=tracker.getLatitude();
-            double longitude=tracker.getLongitude();
+            double latitude = tracker.getLatitude();
+            double longitude = tracker.getLongitude();
             labelLocation.setText("Latitude      " + latitude + "\n" + "Longitude " + longitude);
-        }
-        else
-        {
+        } else {
         }
     }
 
@@ -175,12 +167,9 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
 
     public void environmentManager(View view) {
         int id = 0;
-        if(celsius <= 0)
-        {
+        if (celsius <= 0) {
             iView.setImageResource(R.drawable.snow);
-        }
-        else
-        {
+        } else {
             iView.setImageResource(R.drawable.sun);
         }
     }
@@ -192,13 +181,13 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
             gravity[1] = event.values[1];
             gravity[2] = event.values[2];
             Log.i(logMain, "Accelerometer Daten werden gelesen");
-            labelMotion.setText(gravity[0] + "\n" + gravity[1] + "\n" + gravity[2]  );
+            labelMotion.setText(gravity[0] + "\n" + gravity[1] + "\n" + gravity[2]);
             Log.i(logMain, "Accelerometer Daten wurden ausgelesen");
         }
         if (event.sensor.getType() == Sensor.TYPE_AMBIENT_TEMPERATURE) {
             celsius = event.values[0];
             Log.i(logMain, "Temperatur Daten werden gelesen");
-            labelEnvironment.setText(celsius +"° Celsius");
+            labelEnvironment.setText(celsius + "° Celsius");
             Log.i(logMain, "Temperatur Daten wurden ausgelesen");
         }
     }
@@ -296,11 +285,19 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
 
             // Aufgabe 2 Profilbild
             Uri imgUri = account.getPhotoUrl();
-            if (imgUri != null)
-            {
-                URL imgUrl = new URL(imgUri.toString());
-                Bitmap imgPic = BitmapFactory.decodeStream(imgUrl.openConnection().getInputStream());
-                imgProfilePic.setImageBitmap(imgPic);
+            if (imgUri != null) {
+                Log.d("ImageInfo", "" + imgUri.toString());
+                //URL imgUrl = new URL(imgUri.toString());
+
+                //Probe mit Async Background Worker
+                new LoadProfileImage(imgProfilePic).execute(account.getPhotoUrl().toString());
+
+                //Bitmap imgPic = BitmapFactory.decodeStream(imgUrl.openConnection().getInputStream());
+                //imgProfilePic.setImageBitmap(imgPic);
+            } else {
+                Log.d("ImageInfo", "no Image Url found!");
+                // hsalbsig Foto als default weil die getPhotoUrl Null liefert!
+                new LoadProfileImage(imgProfilePic).execute("https://pbs.twimg.com/profile_images/463942159956078592/jvxlk7Oz_400x400.jpeg");
             }
 
             llProfileLayout.setVisibility(View.VISIBLE);
@@ -323,6 +320,35 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
                 Log.i("LoggingOut", "Logout completed!");
                 signOut();
                 break;
+        }
+    }
+
+    private class LoadProfileImage extends AsyncTask<String, Void, Bitmap> {
+        ImageView bmImage;
+
+        public LoadProfileImage(ImageView bmImage) {
+            this.bmImage = bmImage;
+        }
+
+        protected Bitmap doInBackground(String... uri) {
+            String url = uri[0];
+            Bitmap bitmap = null;
+            try {
+                InputStream in = new java.net.URL(url).openStream();
+                bitmap = BitmapFactory.decodeStream(in);
+            } catch (Exception e) {
+                Log.e("Error", e.getMessage());
+                e.printStackTrace();
+            }
+            return bitmap;
+        }
+
+        protected void onPostExecute(Bitmap result) {
+
+            if (result != null) {
+                Bitmap bitmap = Bitmap.createScaledBitmap(result, 200, 200, true);
+                imgProfilePic.setImageBitmap(bitmap);
+            }
         }
     }
 }
