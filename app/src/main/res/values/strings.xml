@@ -34,4 +34,6 @@
     <string name="name_sign_in_activity">SignInActivity</string>
     <string name="desc_sign_in_activity">Signing in, signing out, and revoking access.</string>
     <string name="desc_sign_in_activity_scopes">Signing in, signing out, and revoking access with Google Drive permissions.</string>
+    <string name="default_notification_channel_id">mobileSenerChannelId</string>
+    <string name="fcm_message">mobileSensor</string>
 </resources>

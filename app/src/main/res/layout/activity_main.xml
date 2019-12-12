@@ -77,6 +77,16 @@
             android:background="#ff00"/>
 
         <Button
+            android:id="@+id/btn_sendServer"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="Send2Server"
+            android:visibility="gone"
+            android:layout_marginBottom="10dp"
+            android:onClick="send2Server"
+            android:background="#0fff00"/>
+
+        <Button
             android:id="@+id/btn_gps"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

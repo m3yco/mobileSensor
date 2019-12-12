@@ -7,6 +7,8 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -40,6 +42,13 @@ import com.google.android.gms.tasks.Task;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.Random;
+
+import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.RemoteMessage;
 
 public class mobileSensor extends Activity implements SensorEventListener, View.OnClickListener {
 
@@ -69,7 +78,7 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
     private final String[] perms = {"android.permission.INTERNET", "android.permission.ACCESS_FINE_LOCATION"};
 
     //Aufgabe 2
-    private static final String TAG = mobileSensor.class.getSimpleName();
+    private static final String TAG = "myMobileSensor";
     private static final int RC_SIGN_IN = 9001;
 
     private SignInButton btnSignIn;
@@ -78,12 +87,29 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
     private ImageView imgProfilePic;
     private TextView txtName, txtEmail, txtId;
 
+    String channelId;
+    String channelName;
+
+    Random random;
+
     private GoogleSignInClient mGoogleSignInClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //Aufgabe3
+        channelId = getResources().getString(R.string.default_notification_channel_id);
+        channelName = getResources().getString(R.string.fcm_message);
+        NotificationManager notificationManager =  null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            notificationManager = getSystemService(NotificationManager.class);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            notificationManager.createNotificationChannel(new NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_LOW));
+        }
+
 
         // toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -123,6 +149,7 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
                 .build();
 
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+        random = new Random();
 
         btnSignIn.setSize(SignInButton.SIZE_STANDARD);
         btnSignIn.setColorScheme(SignInButton.COLOR_LIGHT);
@@ -159,6 +186,16 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
             labelLocation.setText("Latitude      " + latitude + "\n" + "Longitude " + longitude);
         } else {
         }
+    }
+
+    public void send2Server(View view) {
+        FirebaseMessaging fm = FirebaseMessaging.getInstance();
+        String projectId = "587477747938";
+        Log.d(TAG, "Try to send a Message at Server: "+projectId);
+        fm.send(new RemoteMessage.Builder( projectId + "@gcm.googleapis.com")
+                .setMessageId(""+random.nextInt())
+                .addData("action", "ECHO")
+                .build());
     }
 
     public void motionManager(View view) {
@@ -244,6 +281,7 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
     }
 
     private void signIn() {
+        Log.i("LoggingIn", "SignIn start!");
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);
     }
@@ -282,6 +320,7 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
             txtName.setText(account.getDisplayName());
             txtEmail.setText(account.getEmail());
             txtId.setText(account.getId());
+            findViewById(R.id.btn_sendServer).setVisibility(View.VISIBLE);
 
             // Aufgabe 2 Profilbild
             Uri imgUri = account.getPhotoUrl();
@@ -305,6 +344,7 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
         } else {
             findViewById(R.id.sign_in_button).setVisibility(View.VISIBLE);
             findViewById(R.id.btn_logout).setVisibility(View.GONE);
+            findViewById(R.id.btn_sendServer).setVisibility(View.GONE);
             llProfileLayout.setVisibility(View.GONE);
         }
     }
