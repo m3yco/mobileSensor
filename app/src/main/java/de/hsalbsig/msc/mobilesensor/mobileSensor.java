@@ -190,7 +190,7 @@ public class mobileSensor extends Activity implements SensorEventListener, View.
 
     public void send2Server(View view) {
         FirebaseMessaging fm = FirebaseMessaging.getInstance();
-        String projectId = "587477747938";
+        String projectId = "TODO: projectId Firebase";
         Log.d(TAG, "Try to send a Message at Server: "+projectId);
         fm.send(new RemoteMessage.Builder( projectId + "@gcm.googleapis.com")
                 .setMessageId(""+random.nextInt())
