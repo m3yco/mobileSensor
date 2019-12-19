@@ -325,7 +325,7 @@ public class CcsClient implements PacketListener {
 	
 	public static void main(String[] args) {
 
-		final String apiKey = "AIzaSyAYTHNT3RHrFktSXTvQJbsJrBiedhVi_G4";
+		final String apiKey = "TODO: insert APIKey";
 		final String projectId = "587477747938";
 
 			prepareClient(projectId, apiKey, true);
